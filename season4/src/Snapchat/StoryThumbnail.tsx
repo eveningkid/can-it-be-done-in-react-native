@@ -30,27 +30,27 @@ interface StoryThumbnailProps {
 }
 
 const StoryThumbnail = ({ story }: StoryThumbnailProps) => {
-  const navigation = useNavigation();
   const [opacity, setOpacity] = React.useState(1);
+
+  const navigation = useNavigation();
+
   useFocusEffect(() => {
-    if (navigation.isFocused()) {
-      setOpacity(1);
-    }
+    setOpacity(1);
   });
 
   return (
     <Pressable
       style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
       onPress={() => {
-        setOpacity(0);
         navigation.navigate("Story", { story });
+        setOpacity(0);
       }}
     >
-      <SharedElement id={story.id}>
-        <View style={[styles.container, { opacity }]}>
+      <View style={[styles.container, { opacity }]}>
+        <SharedElement id={story.id} style={{ flex: 1 }}>
           <Image source={story.source} style={styles.image} />
-        </View>
-      </SharedElement>
+        </SharedElement>
+      </View>
     </Pressable>
   );
 };

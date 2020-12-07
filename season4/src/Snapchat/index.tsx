@@ -1,9 +1,10 @@
 import React from "react";
-import { createSharedElementStackNavigator } from "react-navigation-shared-element";
+import { createStackNavigator } from "@react-navigation/stack";
 
 import Snapchat, { stories } from "./Snapchat";
 import StoryComp from "./Story";
 import { SnapchatRoutes } from "./Model";
+import { createSharedElementStackNavigator } from "react-navigation-shared-element";
 
 export const assets = stories
   .map((story) => [story.avatar, story.source])
@@ -13,7 +14,7 @@ const Stack = createSharedElementStackNavigator<SnapchatRoutes>();
 const Navigator = () => (
   <Stack.Navigator
     screenOptions={{
-      gestureEnabled: false,
+      gestureEnabled: true,
       headerShown: false,
       cardOverlayEnabled: true,
       cardStyle: { backgroundColor: "transparent" },
@@ -25,8 +26,7 @@ const Navigator = () => (
       name="Story"
       component={StoryComp}
       sharedElements={(route) => {
-        const { id } = route.params.story;
-        return [id];
+        return [route.params.story.id];
       }}
     />
   </Stack.Navigator>

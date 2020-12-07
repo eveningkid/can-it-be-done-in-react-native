@@ -1,7 +1,11 @@
 import { NavigationProp, RouteProp } from "@react-navigation/native";
 import React from "react";
-import { StyleSheet, Dimensions } from "react-native";
+import { StyleSheet, Dimensions, View, Image } from "react-native";
 import { PanGestureHandler } from "react-native-gesture-handler";
+import { Video } from "expo-av";
+
+import { SnapchatRoutes } from "./Model";
+import { SharedElement } from "react-navigation-shared-element";
 import Animated, {
   Extrapolate,
   interpolate,
@@ -11,11 +15,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from "react-native-reanimated";
-import { useVector, snapPoint } from "react-native-redash";
-import { SharedElement } from "react-navigation-shared-element";
-import { Video } from "expo-av";
-
-import { SnapchatRoutes } from "./Model";
+import { snapPoint } from "react-native-redash";
 
 interface StoryProps {
   navigation: NavigationProp<SnapchatRoutes, "Story">;
@@ -23,52 +23,62 @@ interface StoryProps {
 }
 
 const { height } = Dimensions.get("window");
+
 const AnimatedVideo = Animated.createAnimatedComponent(Video);
 
 const Story = ({ route, navigation }: StoryProps) => {
-  const isGestureActive = useSharedValue(false);
-  const translation = useVector();
   const { story } = route.params;
-  const onGestureEvent = useAnimatedGestureHandler({
-    onStart: () => (isGestureActive.value = true),
-    onActive: ({ translationX, translationY }) => {
-      translation.x.value = translationX;
-      translation.y.value = translationY;
-    },
-    onEnd: ({ translationY, velocityY }) => {
-      const snapBack =
-        snapPoint(translationY, velocityY, [0, height]) === height;
 
-      if (snapBack) {
+  const isGestureActive = useSharedValue(false);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const onGestureEvent = useAnimatedGestureHandler({
+    onStart: () => {
+      isGestureActive.value = true;
+    },
+    onActive: ({ translationX, translationY }) => {
+      translateX.value = translationX;
+      translateY.value = translationY;
+    },
+    onEnd: ({ velocityX, velocityY }) => {
+      const goBack =
+        snapPoint(translateY.value, velocityY, [0, height]) === height;
+
+      if (goBack) {
         navigation.goBack();
       } else {
-        isGestureActive.value = false;
-        translation.x.value = withSpring(0);
-        translation.y.value = withSpring(0);
+        translateX.value = withSpring(0, { velocity: velocityX });
+        translateY.value = withSpring(0, { velocity: velocityY });
       }
+
+      isGestureActive.value = false;
     },
   });
+
   const style = useAnimatedStyle(() => {
     const scale = interpolate(
-      translation.y.value,
+      translateY.value,
       [0, height],
       [1, 0.5],
       Extrapolate.CLAMP
     );
+
     return {
       flex: 1,
       transform: [
-        { translateX: translation.x.value * scale },
-        { translateY: translation.y.value * scale },
+        { translateX: translateX.value * scale },
+        { translateY: translateY.value * scale },
         { scale },
       ],
     };
   });
+
   const borderStyle = useAnimatedStyle(() => {
     return {
       borderRadius: withTiming(isGestureActive.value ? 24 : 0),
     };
   });
+
   return (
     <PanGestureHandler onGestureEvent={onGestureEvent}>
       <Animated.View style={style}>
@@ -81,7 +91,6 @@ const Story = ({ route, navigation }: StoryProps) => {
                   ...StyleSheet.absoluteFillObject,
                   width: undefined,
                   height: undefined,
-                  resizeMode: "cover",
                 },
                 borderStyle,
               ]}
